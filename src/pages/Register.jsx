@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, Loader } from 'lucide-react';
+import { Eye, EyeOff, Loader, CheckCircle } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +14,8 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -40,7 +42,17 @@ const Register = () => {
     const result = await register(formData);
     
     if (result.success) {
-      navigate('/feed');
+      // Show success popup instead of redirecting
+      setSuccessMessage(result.message);
+      setShowSuccess(true);
+      // Clear form
+      setFormData({
+        name: '',
+        username: '',
+        email: '',
+        password: '',
+        password_confirmation: ''
+      });
     } else {
       setError(result.error);
     }
@@ -48,8 +60,32 @@ const Register = () => {
     setLoading(false);
   };
 
+  const handleSuccessConfirm = () => {
+    setShowSuccess(false);
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Success Popup Modal */}
+      {showSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="text-green-600" size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Registration Successful!</h3>
+            <p className="text-gray-600 mb-6">{successMessage}</p>
+            <button
+              onClick={handleSuccessConfirm}
+              className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+            >
+              Continue to Login
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="text-center mb-8">

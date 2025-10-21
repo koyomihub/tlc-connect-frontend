@@ -1,20 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { groupsAPI } from '../services/api';
-import { Users, Plus, Search, Loader } from 'lucide-react';
+import { Users, Plus, Search, Loader, MessageSquare, User } from 'lucide-react';
 
 const Groups = () => {
   const { user } = useAuth();
   const [groups, setGroups] = useState([]);
+  const [myGroups, setMyGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
 
-  const loadGroups = async () => {
+  const loadGroups = async (tab = 'all') => {
     try {
-      const response = await groupsAPI.getGroups();
-      setGroups(response.data.groups.data);
+      setLoading(true);
+      let response;
+      
+      if (tab === 'my') {
+        response = await groupsAPI.getMyGroups();
+        setMyGroups(response.data.groups.data || []);
+      } else {
+        response = await groupsAPI.getGroups();
+        setGroups(response.data.groups.data || []);
+      }
     } catch (error) {
       console.error('Error loading groups:', error);
     } finally {
@@ -23,8 +33,10 @@ const Groups = () => {
   };
 
   useEffect(() => {
-    loadGroups();
-  }, []);
+    if (user) {
+      loadGroups(activeTab);
+    }
+  }, [user, activeTab]);
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
@@ -38,7 +50,7 @@ const Groups = () => {
     setCreating(true);
     try {
       await groupsAPI.createGroup(groupData);
-      await loadGroups();
+      await loadGroups(activeTab);
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error creating group:', error);
@@ -50,11 +62,9 @@ const Groups = () => {
   const handleJoinGroup = async (groupId) => {
     try {
       await groupsAPI.joinGroup(groupId);
-      setGroups(prev => prev.map(group => 
-        group.id === groupId 
-          ? { ...group, is_member: true, members_count: group.members_count + 1 }
-          : group
-      ));
+      // Refresh both lists to keep data in sync
+      await loadGroups('all');
+      await loadGroups('my');
     } catch (error) {
       console.error('Error joining group:', error);
     }
@@ -63,17 +73,16 @@ const Groups = () => {
   const handleLeaveGroup = async (groupId) => {
     try {
       await groupsAPI.leaveGroup(groupId);
-      setGroups(prev => prev.map(group => 
-        group.id === groupId 
-          ? { ...group, is_member: false, members_count: group.members_count - 1 }
-          : group
-      ));
+      // Refresh both lists to keep data in sync
+      await loadGroups('all');
+      await loadGroups('my');
     } catch (error) {
       console.error('Error leaving group:', error);
     }
   };
 
-  const filteredGroups = groups.filter(group =>
+  const currentGroups = activeTab === 'my' ? myGroups : groups;
+  const filteredGroups = currentGroups.filter(group =>
     group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     group.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -115,13 +124,37 @@ const Groups = () => {
         </button>
       </div>
 
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 mb-6">
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-colors ${
+            activeTab === 'all'
+              ? 'text-primary-600 border-b-2 border-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          All Groups
+        </button>
+        <button
+          onClick={() => setActiveTab('my')}
+          className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-colors ${
+            activeTab === 'my'
+              ? 'text-primary-600 border-b-2 border-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          My Groups
+        </button>
+      </div>
+
       {/* Search */}
       <div className="mb-6">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Search groups..."
+            placeholder={`Search ${activeTab === 'my' ? 'my' : ''} groups...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -139,7 +172,12 @@ const Groups = () => {
                   <Users className="text-primary-600" size={24} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{group.name}</h3>
+                  <h3 
+                    className="font-semibold text-gray-900 cursor-pointer hover:text-primary-600"
+                    onClick={() => window.location.href = `/groups/${group.id}`}
+                  >
+                    {group.name}
+                  </h3>
                   <p className="text-sm text-gray-500">{group.members_count} members</p>
                 </div>
               </div>
@@ -158,25 +196,41 @@ const Groups = () => {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-1 text-sm text-gray-500">
-                <Users size={16} />
+                {group.owner_id === user.id ? (
+                  <User size={16} className="text-primary-600" />
+                ) : (
+                  <Users size={16} />
+                )}
                 <span>Owned by {group.owner?.name}</span>
               </div>
               
-              {group.is_member ? (
-                <button
-                  onClick={() => handleLeaveGroup(group.id)}
-                  className="text-red-600 hover:text-red-700 text-sm font-medium"
-                >
-                  Leave
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleJoinGroup(group.id)}
-                  className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-                >
-                  Join
-                </button>
-              )}
+              <div className="flex items-center space-x-2">
+                {group.is_member && (
+                  <button
+                    onClick={() => window.location.href = `/groups/${group.id}/chat`}
+                    className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center space-x-1"
+                  >
+                    <MessageSquare size={16} />
+                    <span>Chat</span>
+                  </button>
+                )}
+                
+                {group.is_member ? (
+                  <button
+                    onClick={() => handleLeaveGroup(group.id)}
+                    className="text-red-600 hover:text-red-700 text-sm font-medium"
+                  >
+                    {group.owner_id === user.id ? 'Delete' : 'Leave'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleJoinGroup(group.id)}
+                    className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+                  >
+                    Join
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -187,9 +241,16 @@ const Groups = () => {
           <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Users className="text-primary-600" size={32} />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No groups found</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {activeTab === 'my' ? 'No groups joined yet' : 'No groups found'}
+          </h3>
           <p className="text-gray-600">
-            {searchTerm ? 'Try adjusting your search terms' : 'Be the first to create a group!'}
+            {searchTerm 
+              ? 'Try adjusting your search terms' 
+              : activeTab === 'my' 
+                ? 'Join some groups to see them here!' 
+                : 'Be the first to create a group!'
+            }
           </p>
         </div>
       )}

@@ -104,7 +104,7 @@ const Home = () => {
                 to="/login"
                 className="border border-primary-600 text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors text-center"
               >
-                Sign In
+                Log In
               </Link>
             </div>
           </div>

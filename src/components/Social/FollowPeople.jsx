@@ -7,6 +7,16 @@ const FollowPeople = () => {
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState({});
 
+  // Get avatar URL with proper fallback
+  const getAvatarUrl = (userData) => {
+    if (userData?.avatar) {
+      if (userData.avatar.startsWith('http')) return userData.avatar;
+      if (userData.avatar.startsWith('/')) return userData.avatar;
+      return `http://localhost:8000/storage/${userData.avatar.replace('public/', '')}`;
+    }
+    return '/default-avatar.png';
+  };
+
   const loadSuggestions = async () => {
     try {
       const response = await followAPI.getSuggestions();
@@ -87,11 +97,12 @@ const FollowPeople = () => {
           <div key={user.id} className="flex items-center justify-between">
             <div className="flex items-center space-x-3 flex-1 min-w-0">
               <img
-                src={user.avatar || '/default-avatar.png'}
+                src={getAvatarUrl(user)}
                 alt={user.name}
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                className="w-10 h-10 rounded-full object-cover bg-gray-200 flex-shrink-0"
                 onError={(e) => {
                   e.target.src = '/default-avatar.png';
+                  e.target.onerror = null; // Prevent infinite loop
                 }}
               />
               <div className="min-w-0 flex-1">

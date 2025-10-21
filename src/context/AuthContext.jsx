@@ -53,16 +53,22 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post('http://localhost:8000/api/register', userData);
 
-      const { user: registeredUser, access_token } = response.data;
-
-      localStorage.setItem('auth_token', access_token);
-      localStorage.setItem('user_data', JSON.stringify(registeredUser));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      setUser(registeredUser);
-
-      return { success: true, user: registeredUser };
+      // Don't auto-login, just return success
+      return { 
+        success: true, 
+        message: 'Registration successful! Please log in to continue.' 
+      };
       
     } catch (error) {
+      // Handle validation errors (422 status)
+      if (error.response?.status === 422) {
+        const validationErrors = error.response.data.errors;
+        // Get the first error message from validation
+        const firstError = Object.values(validationErrors)[0]?.[0] || 'Validation failed';
+        return { success: false, error: firstError };
+      }
+      
+      // Handle other errors
       const errorMessage = error.response?.data?.message || 'Registration failed';
       return { success: false, error: errorMessage };
     }

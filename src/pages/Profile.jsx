@@ -15,6 +15,14 @@ const Profile = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Ensure avatar URL is properly formatted
+  const getAvatarUrl = (avatar) => {
+    if (!avatar) return '/default-avatar.png';
+    if (avatar.startsWith('http')) return avatar;
+    if (avatar.startsWith('/')) return avatar; // Already a public path
+    return `http://localhost:8000/storage/${avatar.replace('public/', '')}`;
+  };
+
   const loadProfile = async () => {
     try {
       const [profileResponse] = await Promise.all([
@@ -123,13 +131,6 @@ const Profile = () => {
     }
   };
 
-  // Ensure avatar URL is properly formatted
-  const getAvatarUrl = (avatar) => {
-    if (!avatar) return '/default-avatar.png';
-    if (avatar.startsWith('http')) return avatar;
-    return `http://localhost:8000/storage/${avatar.replace('public/', '')}`;
-  };
-
   if (!user) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -181,9 +182,10 @@ const Profile = () => {
                   <img
                     src={getAvatarUrl(currentUser.avatar)}
                     alt={currentUser.name}
-                    className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white shadow-lg object-cover bg-white"
+                    className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white shadow-lg object-cover bg-gray-200"
                     onError={(e) => {
                       e.target.src = '/default-avatar.png';
+                      e.target.onerror = null; // Prevent infinite loop
                     }}
                   />
                   {/* Only show camera icon when editing mode is active */}
@@ -329,6 +331,14 @@ const Profile = () => {
                 {currentUser.bio && (
                   <p className="text-gray-700 text-lg leading-relaxed">{currentUser.bio}</p>
                 )}
+                
+                {/* Followers & Following Counts */}
+                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <span className="font-medium">{stats.followers_count} followers</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="font-medium">{stats.following_count} following</span>
+                </div>
+
                 <div className="flex flex-wrap gap-6 text-base text-gray-600">
                   {currentUser.location && (
                     <div className="flex items-center space-x-2">
@@ -355,22 +365,22 @@ const Profile = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow">
-            <div className="text-3xl font-bold text-primary-600 mb-2">{stats.posts_count}</div>
-            <div className="text-sm text-gray-600 font-medium">Posts</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.posts_count}</div>
+            <div className="text-xs text-gray-600 font-medium">Posts</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow">
-            <div className="text-3xl font-bold text-primary-600 mb-2">{stats.threads_count}</div>
-            <div className="text-sm text-gray-600 font-medium">Threads</div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.threads_count}</div>
+            <div className="text-xs text-gray-600 font-medium">Threads</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow">
-            <div className="text-3xl font-bold text-primary-600 mb-2">{stats.followers_count}</div>
-            <div className="text-sm text-gray-600 font-medium">Followers</div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.groups_count}</div>
+            <div className="text-xs text-gray-600 font-medium">Groups</div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow">
-            <div className="text-3xl font-bold text-primary-600 mb-2">{stats.groups_count}</div>
-            <div className="text-sm text-gray-600 font-medium">Groups</div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.replies_count}</div>
+            <div className="text-xs text-gray-600 font-medium">Comments</div>
           </div>
         </div>
 

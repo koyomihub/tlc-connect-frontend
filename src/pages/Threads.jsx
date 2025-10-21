@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { threadsAPI } from '../services/api';
-import { MessageSquare, Plus, Users, Clock, Loader, Send } from 'lucide-react';
+import { MessageSquare, Plus, Users, Clock, Loader, Send, User } from 'lucide-react';
 
 const Threads = () => {
   const { user } = useAuth();
@@ -13,15 +13,26 @@ const Threads = () => {
   const [postingReply, setPostingReply] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creatingThread, setCreatingThread] = useState(false);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'my'
 
-  const loadThreads = async () => {
+  const loadThreads = async (tab = 'all') => {
     try {
-      console.log('Loading threads...');
-      const response = await threadsAPI.getThreads();
-      console.log('Threads response:', response.data);
-      setThreads(response.data.threads.data);
+      console.log(`Loading ${tab} threads...`);
+      setLoading(true);
+      
+      let response;
+      if (tab === 'my') {
+        // Load only user's threads using the fixed route
+        response = await threadsAPI.getMyThreads();
+      } else {
+        // Load all threads
+        response = await threadsAPI.getThreads();
+      }
+      
+      console.log(`${tab} threads response:`, response.data);
+      setThreads(response.data.threads?.data || response.data.data || []);
     } catch (error) {
-      console.error('Error loading threads:', error);
+      console.error(`Error loading ${tab} threads:`, error);
     } finally {
       setLoading(false);
     }
@@ -41,9 +52,9 @@ const Threads = () => {
 
   useEffect(() => {
     if (user) {
-      loadThreads();
+      loadThreads(activeTab);
     }
-  }, [user]);
+  }, [user, activeTab]);
 
   const handleCreateThread = async (e) => {
     e.preventDefault();
@@ -54,14 +65,13 @@ const Threads = () => {
       tags: formData.get('tags') ? formData.get('tags').split(',').map(tag => tag.trim()) : [],
     };
 
-    // Debug: Check what data is being sent
     console.log('Sending thread data:', threadData);
 
     setCreatingThread(true);
     try {
       const response = await threadsAPI.createThread(threadData);
       console.log('Thread creation response:', response.data);
-      await loadThreads();
+      await loadThreads(activeTab);
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error creating thread:', error);
@@ -73,25 +83,36 @@ const Threads = () => {
 
   const handleAddReply = async (e) => {
     e.preventDefault();
-    if (!replyContent.trim() || !selectedThread) return;
+    
+    // Store content and clear immediately
+    const content = replyContent;
+    if (!content.trim() || !selectedThread || postingReply) return;
 
+    // Clear form IMMEDIATELY
+    setReplyContent('');
     setPostingReply(true);
+
     try {
-      const response = await threadsAPI.addReply(selectedThread.id, replyContent);
+      const response = await threadsAPI.addReply(selectedThread.id, content);
       console.log('Reply response:', response.data);
       
-      // Add the new reply to the list immediately
-      setReplies(prev => [...prev, response.data.reply]);
-      setReplyContent('');
+      // Force state update by creating new array
+      setReplies(prev => [...prev, { ...response.data.reply }]);
       
-      // Update thread in list with new reply count
+      // Update thread count
       setThreads(prev => prev.map(thread => 
         thread.id === selectedThread.id 
           ? { ...thread, comments_count: (thread.comments_count || 0) + 1 }
           : thread
       ));
+
+      console.log('Reply added successfully!');
+      
     } catch (error) {
       console.error('Error adding reply:', error);
+      // If error, restore the content so user can try again
+      setReplyContent(content);
+      alert('Failed to add reply. Please try again.');
     } finally {
       setPostingReply(false);
     }
@@ -106,8 +127,17 @@ const Threads = () => {
     });
   };
 
-  // Debug: Check what's being rendered
-  console.log('Current state:', { threads, selectedThread, replies, loading, user });
+  // Debug effect to monitor state
+  useEffect(() => {
+    console.log('Current state:', { 
+      replyContent, 
+      postingReply, 
+      repliesCount: replies.length,
+      selectedThreadId: selectedThread?.id,
+      activeTab,
+      threadsCount: threads.length
+    });
+  }, [replyContent, postingReply, replies, selectedThread, activeTab, threads]);
 
   if (!user) {
     return (
@@ -151,15 +181,46 @@ const Threads = () => {
         {/* Threads List */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="font-semibold text-gray-900">All Threads ({threads.length})</h2>
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-colors ${
+                  activeTab === 'all'
+                    ? 'text-primary-600 border-b-2 border-primary-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                All Threads
+              </button>
+              <button
+                onClick={() => setActiveTab('my')}
+                className={`flex-1 px-4 py-3 text-sm font-medium text-center transition-colors ${
+                  activeTab === 'my'
+                    ? 'text-primary-600 border-b-2 border-primary-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                My Threads
+              </button>
             </div>
+
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="font-semibold text-gray-900">
+                {activeTab === 'all' ? 'All Threads' : 'My Threads'} ({threads.length})
+              </h2>
+            </div>
+            
             <div className="max-h-96 overflow-y-auto">
               {threads.length === 0 ? (
                 <div className="p-8 text-center">
                   <MessageSquare className="mx-auto text-gray-400 mb-4" size={48} />
-                  <p className="text-gray-600">No threads yet</p>
-                  <p className="text-gray-500 text-sm mt-2">Start the first discussion!</p>
+                  <p className="text-gray-600">
+                    {activeTab === 'all' ? 'No threads yet' : 'You haven\'t created any threads yet'}
+                  </p>
+                  <p className="text-gray-500 text-sm mt-2">
+                    {activeTab === 'all' ? 'Start the first discussion!' : 'Create your first thread to get started!'}
+                  </p>
                 </div>
               ) : (
                 threads.map(thread => (
@@ -181,6 +242,9 @@ const Threads = () => {
                           className="w-5 h-5 rounded-full"
                         />
                         <span>{thread.user?.name}</span>
+                        {activeTab === 'all' && thread.user_id === user.id && (
+                          <User size={12} className="text-primary-600" title="Your thread" />
+                        )}
                       </div>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-1">
@@ -217,6 +281,11 @@ const Threads = () => {
                       <h3 className="font-semibold text-gray-900">{selectedThread.user?.name}</h3>
                       <p className="text-sm text-gray-500">{formatDate(selectedThread.created_at)}</p>
                     </div>
+                    {selectedThread.user_id === user.id && (
+                      <span className="px-2 py-1 bg-primary-100 text-primary-800 text-xs rounded-full font-medium">
+                        Your thread
+                      </span>
+                    )}
                   </div>
                 </div>
                 {selectedThread.title && (
@@ -279,34 +348,41 @@ const Threads = () => {
                 )}
 
                 {/* Reply Form */}
-                <form onSubmit={handleAddReply} className="flex space-x-3">
+                <form onSubmit={handleAddReply} className="flex items-start space-x-3">
                   <img
                     src={user.avatar || '/default-avatar.png'}
                     alt={user.name}
-                    className="w-8 h-8 rounded-full flex-shrink-0"
+                    className="w-8 h-8 rounded-full flex-shrink-0 mt-3"
                   />
-                  <div className="flex-1">
-                    <textarea
-                      value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
-                      placeholder="Write your reply..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-                      rows="2"
-                      disabled={postingReply}
-                    />
+                  <div className="flex-1 flex items-center space-x-3">
+                    <div className="flex-1">
+                      <textarea
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        placeholder="Write your reply..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                        rows="2"
+                        disabled={postingReply}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={postingReply || !replyContent.trim()}
+                      className="bg-primary-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 h-[54px] min-w-[80px] transition-colors"
+                    >
+                      {postingReply ? (
+                        <>
+                          <Loader className="animate-spin" size={18} />
+                          <span className="hidden sm:inline">...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={18} />
+                          <span className="hidden sm:inline">Reply</span>
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <button
-                    type="submit"
-                    disabled={postingReply || !replyContent.trim()}
-                    className="bg-primary-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 self-end"
-                  >
-                    {postingReply ? (
-                      <Loader className="animate-spin" size={18} />
-                    ) : (
-                      <Send size={18} />
-                    )}
-                    <span>Reply</span>
-                  </button>
                 </form>
               </div>
             </div>

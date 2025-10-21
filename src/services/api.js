@@ -42,13 +42,27 @@ export const feedAPI = {
 
 export const groupsAPI = {
   getGroups: () => api.get('/groups'),
+  getMyGroups: () => api.get('/groups/my'),
+  getGroup: (groupId) => api.get(`/groups/${groupId}`),
   createGroup: (groupData) => api.post('/groups', groupData),
   joinGroup: (groupId) => api.post(`/groups/${groupId}/join`),
   leaveGroup: (groupId) => api.post(`/groups/${groupId}/leave`),
+  getGroupMessages: (groupId) => api.get(`/groups/${groupId}/messages`),
+  sendGroupMessage: (groupId, content) => api.post(`/groups/${groupId}/messages`, { content }),
+  
+  // Invitation methods
+  getMutualFollowers: (groupId) => api.get(`/groups/${groupId}/mutual-followers`),
+  inviteUser: (groupId, inviteData) => api.post(`/groups/${groupId}/invite`, inviteData),
+  getInvitations: (groupId) => api.get(`/groups/${groupId}/invitations`),
+  acceptInvitation: (groupId) => api.post(`/groups/${groupId}/invitations/accept`),
+  declineInvitation: (groupId) => api.post(`/groups/${groupId}/invitations/decline`),
+  cancelInvitation: (groupId, invitationId) => api.delete(`/groups/${groupId}/invitations/${invitationId}`),
+  getUserInvitations: () => api.get('/user/invitations'), // Added this line
 };
 
 export const threadsAPI = {
   getThreads: () => api.get('/threads'),
+  getMyThreads: () => api.get('/my/threads'), // ADD THIS LINE - FIXES THE ISSUE
   createThread: (threadData) => api.post('/threads', threadData),
   getThread: (threadId) => api.get(`/threads/${threadId}`),
   addReply: (threadId, content) => api.post(`/threads/${threadId}/replies`, { content }),
@@ -87,6 +101,14 @@ export const mediaAPI = {
 export const reactionsAPI = {
   addReaction: (postId, type) => api.post(`/posts/${postId}/reactions`, { type }),
   removeReaction: (postId) => api.delete(`/posts/${postId}/reactions`),
+  toggleLike: (postId) => api.post(`/posts/${postId}/toggle-like`),
+};
+
+export const postsAPI = {
+  getPosts: () => api.get('/posts'),
+  createPost: (postData) => api.post('/posts', postData),
+  addComment: (postId, content) => api.post(`/posts/${postId}/comments`, { content }),
+  getComments: (postId) => api.get(`/posts/${postId}/comments`),
 };
 
 export const notificationsAPI = {

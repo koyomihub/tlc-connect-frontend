@@ -3,6 +3,7 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
+// Initialize Echo with authentication
 window.Echo = new Echo({
     broadcaster: 'pusher',
     key: import.meta.env.VITE_PUSHER_APP_KEY,
@@ -16,7 +17,34 @@ window.Echo = new Echo({
     authEndpoint: 'http://localhost:8000/broadcasting/auth'
 });
 
-// Export helper functions for real-time updates
+// Points system real-time listeners
+export const listenToPointsUpdates = (userId, callback) => {
+    return window.Echo.private(`points.${userId}`)
+        .listen('.points.updated', (e) => {
+            console.log('Points updated:', e);
+            callback(e);
+        });
+};
+
+export const stopListeningToPoints = (userId) => {
+    window.Echo.leave(`points.${userId}`);
+};
+
+// Helper to get current user ID from localStorage
+export const getCurrentUserId = () => {
+    try {
+        const userData = localStorage.getItem('user_data');
+        if (userData) {
+            const user = JSON.parse(userData);
+            return user.id;
+        }
+    } catch (error) {
+        console.error('Error getting user ID:', error);
+    }
+    return null;
+};
+
+// Thread replies listeners
 export const listenToThreadReplies = (threadId, callback) => {
     return window.Echo.private(`thread.${threadId}`)
         .listen('reply.added', (e) => {
@@ -29,101 +57,13 @@ export const stopListeningToThread = (threadId) => {
     window.Echo.leave(`thread.${threadId}`);
 };
 
-// Listen for notifications
-if (window.currentUserId) {
-    window.Echo.private(`user.${window.currentUserId}.notifications`)
-        .notification((notification) => {
-            console.log('New notification:', notification);
-            showNotification(notification);
-            updateNotificationBadge();
-        });
-
-    // Listen for new posts in feed
-    window.Echo.private(`user.${window.currentUserId}.feed`)
-        .listen('post.created', (e) => {
-            console.log('New post in feed:', e.post);
-            prependToFeed(e.post);
-        });
-}
-
-// Listen for post reactions
-export function listenToPostReactions(postId) {
+// Post reactions listeners
+export const listenToPostReactions = (postId, callback) => {
     return window.Echo.private(`post.${postId}`)
         .listen('reaction.added', (e) => {
-            console.log('New reaction:', e.reaction);
-            updateReactions(e.reaction, e.reactions_count);
+            console.log('New reaction:', e);
+            callback(e.reaction, e.reactions_count);
         });
-}
+};
 
-// Listen for new replies (legacy function - keeping for compatibility)
-export function listenToThreadRepliesOld(threadId) {
-    return window.Echo.private(`post.${threadId}`)
-        .listen('reply.added', (e) => {
-            console.log('New reply:', e.reply);
-            appendReply(e.reply);
-        });
-}
-
-// Helper functions for UI updates
-function showNotification(notification) {
-    // Create and show notification UI
-    const notificationElement = document.createElement('div');
-    notificationElement.className = 'notification alert alert-info';
-    notificationElement.innerHTML = `
-        <strong>${notification.data.message}</strong>
-    `;
-    
-    const notificationContainer = document.getElementById('notifications-container');
-    if (notificationContainer) {
-        notificationContainer.appendChild(notificationElement);
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            notificationElement.remove();
-        }, 5000);
-    }
-}
-
-function updateNotificationBadge() {
-    const badge = document.getElementById('notification-badge');
-    if (badge) {
-        const currentCount = parseInt(badge.textContent) || 0;
-        badge.textContent = currentCount + 1;
-        badge.style.display = 'inline';
-    }
-}
-
-function prependToFeed(post) {
-    const feedContainer = document.getElementById('feed-container');
-    if (feedContainer) {
-        const postElement = createPostElement(post);
-        feedContainer.insertBefore(postElement, feedContainer.firstChild);
-    }
-}
-
-function updateReactions(reaction, reactionsCount) {
-    const reactionButton = document.querySelector(`[data-post-id="${reaction.post_id}"]`);
-    const reactionCount = document.querySelector(`[data-post-id="${reaction.post_id}"] .reaction-count`);
-    
-    if (reactionButton && reactionCount) {
-        reactionCount.textContent = reactionsCount;
-    }
-}
-
-function appendReply(reply) {
-    const repliesContainer = document.querySelector(`[data-thread-id="${reply.parent_id}"] .replies-container`);
-    if (repliesContainer) {
-        const replyElement = createReplyElement(reply);
-        repliesContainer.appendChild(replyElement);
-    }
-}
-
-function createPostElement(post) {
-    // Implementation for creating post HTML element
-    return document.createElement('div');
-}
-
-function createReplyElement(reply) {
-    // Implementation for creating reply HTML element
-    return document.createElement('div');
-}
+export default window.Echo;
