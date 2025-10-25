@@ -36,7 +36,7 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (credentials) => api.post('/api/login', credentials),
   register: (userData) => api.post('/api/register', userData),
-  getProfile: () => api.get('/api/profile'),
+  getProfile: () => api.get('/api/profile'), // No trailing slash
 };
 
 export const feedAPI = {
