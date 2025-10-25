@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL + '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -34,105 +34,105 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  login: (credentials) => api.post('/login', credentials),
-  register: (userData) => api.post('/register', userData),
-  getProfile: () => api.get('/profile'),
+  login: (credentials) => api.post('/api/login', credentials),
+  register: (userData) => api.post('/api/register', userData),
+  getProfile: () => api.get('/api/profile'),
 };
 
 export const feedAPI = {
-  getFeed: () => api.get('/feed'),
-  createPost: (postData) => api.post('/feed', postData),
+  getFeed: () => api.get('/api/feed'),
+  createPost: (postData) => api.post('/api/feed', postData),
 };
 
 export const groupsAPI = {
-  getGroups: () => api.get('/groups'),
-  getMyGroups: () => api.get('/groups/my'),
-  getGroup: (groupId) => api.get(`/groups/${groupId}`),
-  createGroup: (groupData) => api.post('/groups', groupData),
-  joinGroup: (groupId) => api.post(`/groups/${groupId}/join`),
-  leaveGroup: (groupId) => api.post(`/groups/${groupId}/leave`),
-  getGroupMessages: (groupId) => api.get(`/groups/${groupId}/messages`),
-  sendGroupMessage: (groupId, content) => api.post(`/groups/${groupId}/messages`, { content }),
+  getGroups: () => api.get('/api/groups'),
+  getMyGroups: () => api.get('/api/groups/my'),
+  getGroup: (groupId) => api.get(`/api/groups/${groupId}`),
+  createGroup: (groupData) => api.post('/api/groups', groupData),
+  joinGroup: (groupId) => api.post(`/api/groups/${groupId}/join`),
+  leaveGroup: (groupId) => api.post(`/api/groups/${groupId}/leave`),
+  getGroupMessages: (groupId) => api.get(`/api/groups/${groupId}/messages`),
+  sendGroupMessage: (groupId, content) => api.post(`/api/groups/${groupId}/messages`, { content }),
   
   // Invitation methods
-  getMutualFollowers: (groupId) => api.get(`/groups/${groupId}/mutual-followers`),
-  inviteUser: (groupId, inviteData) => api.post(`/groups/${groupId}/invite`, inviteData),
-  getInvitations: (groupId) => api.get(`/groups/${groupId}/invitations`),
-  acceptInvitation: (groupId) => api.post(`/groups/${groupId}/invitations/accept`),
-  declineInvitation: (groupId) => api.post(`/groups/${groupId}/invitations/decline`),
-  cancelInvitation: (groupId, invitationId) => api.delete(`/groups/${groupId}/invitations/${invitationId}`),
-  getUserInvitations: () => api.get('/user/invitations'), // Added this line
+  getMutualFollowers: (groupId) => api.get(`/api/groups/${groupId}/mutual-followers`),
+  inviteUser: (groupId, inviteData) => api.post(`/api/groups/${groupId}/invite`, inviteData),
+  getInvitations: (groupId) => api.get(`/api/groups/${groupId}/invitations`),
+  acceptInvitation: (groupId) => api.post(`/api/groups/${groupId}/invitations/accept`),
+  declineInvitation: (groupId) => api.post(`/api/groups/${groupId}/invitations/decline`),
+  cancelInvitation: (groupId, invitationId) => api.delete(`/api/groups/${groupId}/invitations/${invitationId}`),
+  getUserInvitations: () => api.get('/api/user/invitations'),
 };
 
 export const threadsAPI = {
-  getThreads: () => api.get('/threads'),
-  getMyThreads: () => api.get('/my/threads'), // ADD THIS LINE - FIXES THE ISSUE
-  createThread: (threadData) => api.post('/threads', threadData),
-  getThread: (threadId) => api.get(`/threads/${threadId}`),
-  addReply: (threadId, content) => api.post(`/threads/${threadId}/replies`, { content }),
+  getThreads: () => api.get('/api/threads'),
+  getMyThreads: () => api.get('/api/my/threads'),
+  createThread: (threadData) => api.post('/api/threads', threadData),
+  getThread: (threadId) => api.get(`/api/threads/${threadId}`),
+  addReply: (threadId, content) => api.post(`/api/threads/${threadId}/replies`, { content }),
 };
 
 export const profileAPI = {
-  getProfile: (username) => api.get(`/profile/${username || ''}`),
-  updateProfile: (profileData) => api.put('/profile', profileData),
-  getPosts: (username) => api.get(`/profile/${username}/posts`),
-  getThreads: (username) => api.get(`/profile/${username}/threads`),
+  getProfile: (username) => api.get(`/api/profile/${username || ''}`),
+  updateProfile: (profileData) => api.put('/api/profile', profileData),
+  getPosts: (username) => api.get(`/api/profile/${username}/posts`),
+  getThreads: (username) => api.get(`/api/profile/${username}/threads`),
 };
 
 export const followAPI = {
-  getSuggestions: () => api.get('/users/suggestions'),
-  follow: (userId) => api.post(`/users/${userId}/follow`),
-  unfollow: (userId) => api.post(`/users/${userId}/unfollow`),
-  toggleFollow: (userId) => api.post(`/users/${userId}/toggle-follow`),
-  getFollowers: (userId) => api.get(`/users/${userId}/followers`),
-  getFollowing: (userId) => api.get(`/users/${userId}/following`),
+  getSuggestions: () => api.get('/api/users/suggestions'),
+  follow: (userId) => api.post(`/api/users/${userId}/follow`),
+  unfollow: (userId) => api.post(`/api/users/${userId}/unfollow`),
+  toggleFollow: (userId) => api.post(`/api/users/${userId}/toggle-follow`),
+  getFollowers: (userId) => api.get(`/api/users/${userId}/followers`),
+  getFollowing: (userId) => api.get(`/api/users/${userId}/following`),
 };
 
 export const mediaAPI = {
-  uploadAvatar: (formData) => api.post('/upload/avatar', formData, {
+  uploadAvatar: (formData) => api.post('/api/upload/avatar', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   }),
-  uploadPostMedia: (formData) => api.post('/upload/post-media', formData, {
+  uploadPostMedia: (formData) => api.post('/api/upload/post-media', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   }),
-  deleteAvatar: () => api.delete('/avatar'),
+  deleteAvatar: () => api.delete('/api/avatar'),
 };
 
 export const reactionsAPI = {
-  addReaction: (postId, type) => api.post(`/posts/${postId}/reactions`, { type }),
-  removeReaction: (postId) => api.delete(`/posts/${postId}/reactions`),
-  toggleLike: (postId) => api.post(`/posts/${postId}/toggle-like`),
+  addReaction: (postId, type) => api.post(`/api/posts/${postId}/reactions`, { type }),
+  removeReaction: (postId) => api.delete(`/api/posts/${postId}/reactions`),
+  toggleLike: (postId) => api.post(`/api/posts/${postId}/toggle-like`),
 };
 
 export const postsAPI = {
-  getPosts: () => api.get('/posts'),
-  createPost: (postData) => api.post('/posts', postData),
-  addComment: (postId, content) => api.post(`/posts/${postId}/comments`, { content }),
-  getComments: (postId) => api.get(`/posts/${postId}/comments`),
+  getPosts: () => api.get('/api/posts'),
+  createPost: (postData) => api.post('/api/posts', postData),
+  addComment: (postId, content) => api.post(`/api/posts/${postId}/comments`, { content }),
+  getComments: (postId) => api.get(`/api/posts/${postId}/comments`),
 };
 
 export const notificationsAPI = {
-  getNotifications: () => api.get('/notifications'),
+  getNotifications: () => api.get('/api/notifications'),
   markAsRead: (id = null) => {
     if (id) {
-      return api.post(`/notifications/${id}/mark-as-read`);
+      return api.post(`/api/notifications/${id}/mark-as-read`);
     }
-    return api.post('/notifications/mark-as-read');
+    return api.post('/api/notifications/mark-as-read');
   },
-  getUnreadCount: () => api.get('/notifications/unread-count'),
+  getUnreadCount: () => api.get('/api/notifications/unread-count'),
 };
 
 export const userActivityAPI = {
-  getPosts: (username) => api.get(`/profile/${username}/posts`),
-  getThreads: (username) => api.get(`/profile/${username}/threads`),
-  getReplies: (username) => api.get(`/profile/${username}/replies`),
-  getLikedPosts: (username) => api.get(`/profile/${username}/liked-posts`),
-  getGroups: (username) => api.get(`/profile/${username}/groups`),
-  getStats: (username) => api.get(`/profile/${username}/stats`),
+  getPosts: (username) => api.get(`/api/profile/${username}/posts`),
+  getThreads: (username) => api.get(`/api/profile/${username}/threads`),
+  getReplies: (username) => api.get(`/api/profile/${username}/replies`),
+  getLikedPosts: (username) => api.get(`/api/profile/${username}/liked-posts`),
+  getGroups: (username) => api.get(`/api/profile/${username}/groups`),
+  getStats: (username) => api.get(`/api/profile/${username}/stats`),
 };
 
 export default api;
