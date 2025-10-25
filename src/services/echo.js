@@ -14,7 +14,7 @@ window.Echo = new Echo({
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
     },
-    authEndpoint: 'http://localhost:8000/broadcasting/auth'
+    authEndpoint: import.meta.env.VITE_API_URL + '/broadcasting/auth'
 });
 
 // Points system real-time listeners
