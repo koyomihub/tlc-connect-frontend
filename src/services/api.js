@@ -140,5 +140,4 @@ export const earnAPI = {
   claimPoints: () => api.post('/api/earn/claim'),
   getPointsHistory: () => api.get('/api/earn/history'),
 };
-
 export default api;

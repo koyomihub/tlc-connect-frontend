@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from "../context/AuthContext";
 import { DollarSign, TrendingUp, Clock, Calendar, Zap, Target } from 'lucide-react';
 import { listenToPointsUpdates, stopListeningToPoints, getCurrentUserId } from "../services/echo";
+import { earnAPI } from "../services/api";
 
 const Earn = () => {
   const { user } = useAuth();
@@ -91,7 +92,7 @@ const Earn = () => {
   const handleClaimPoints = async () => {
     setClaiming(true);
     try {
-      const response = await fetch('http://localhost:8000/api/earn/claim', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/earn/claim`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
