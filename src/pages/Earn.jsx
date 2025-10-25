@@ -32,7 +32,7 @@ const Earn = () => {
 
   const fetchPointsData = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/earn/points', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/earn/points`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
         },

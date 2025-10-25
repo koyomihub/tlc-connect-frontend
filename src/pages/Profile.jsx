@@ -20,7 +20,7 @@ const Profile = () => {
     if (!avatar) return '/default-avatar.png';
     if (avatar.startsWith('http')) return avatar;
     if (avatar.startsWith('/')) return avatar; // Already a public path
-    return `http://localhost:8000/storage/${avatar.replace('public/', '')}`;
+    return `${import.meta.env.VITE_API_URL}/storage/${avatar.replace('public/', '')}`;
   };
 
   const loadProfile = async () => {

@@ -12,7 +12,7 @@ const FollowPeople = () => {
     if (userData?.avatar) {
       if (userData.avatar.startsWith('http')) return userData.avatar;
       if (userData.avatar.startsWith('/')) return userData.avatar;
-      return `http://localhost:8000/storage/${userData.avatar.replace('public/', '')}`;
+      return `${import.meta.env.VITE_API_URL}/storage/${userData.avatar.replace('public/', '')}`;
     }
     return '/default-avatar.png';
   };

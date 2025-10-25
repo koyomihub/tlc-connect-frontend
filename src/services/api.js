@@ -135,4 +135,10 @@ export const userActivityAPI = {
   getStats: (username) => api.get(`/api/profile/${username}/stats`),
 };
 
+export const earnAPI = {
+  getPointsData: () => api.get('/api/earn/points'),
+  claimPoints: () => api.post('/api/earn/claim'),
+  getPointsHistory: () => api.get('/api/earn/history'),
+};
+
 export default api;
