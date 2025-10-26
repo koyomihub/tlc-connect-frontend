@@ -15,25 +15,58 @@ const Profile = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Ensure avatar URL is properly formatted
+  // Improved avatar URL handling
   const getAvatarUrl = (avatar) => {
-    if (!avatar) return '/default-avatar.png';
-    if (avatar.startsWith('http')) return avatar;
-    if (avatar.startsWith('/')) return avatar; // Already a public path
-    return `${import.meta.env.VITE_API_URL}/storage/${avatar.replace('public/', '')}`;
+    if (!avatar || avatar === 'default-avatar.png' || avatar.includes('default-avatar')) {
+      return '/default-avatar.png';
+    }
+    
+    if (avatar.startsWith('http')) {
+      return avatar;
+    }
+    
+    if (avatar.startsWith('/')) {
+      return avatar;
+    }
+    
+    // For backend stored avatars
+    const baseUrl = import.meta.env.VITE_API_URL;
+    if (avatar.includes('storage/')) {
+      return `${baseUrl}/${avatar}`;
+    }
+    
+    return `${baseUrl}/storage/${avatar.replace('public/', '')}`;
   };
 
   const loadProfile = async () => {
     try {
-      const [profileResponse] = await Promise.all([
-        profileAPI.getProfile(),
-      ]);
-
-      setProfile(profileResponse.data);
-      setStats(profileResponse.data.stats);
-      setPosts(profileResponse.data.posts || []);
+      setLoading(true);
+      const response = await profileAPI.getProfile();
+      
+      if (response.data) {
+        setProfile(response.data);
+        setStats(response.data.stats || {
+          posts_count: 0,
+          threads_count: 0,
+          groups_count: 0,
+          replies_count: 0,
+          followers_count: 0,
+          following_count: 0
+        });
+        setPosts(response.data.posts || []);
+      }
     } catch (error) {
       console.error('Error loading profile:', error);
+      // Set default stats if API fails
+      setStats({
+        posts_count: 0,
+        threads_count: 0,
+        groups_count: 0,
+        replies_count: 0,
+        followers_count: 0,
+        following_count: 0
+      });
+      setPosts([]);
     } finally {
       setLoading(false);
     }
@@ -59,11 +92,33 @@ const Profile = () => {
 
     setSaving(true);
     try {
-      await profileAPI.updateProfile(profileData);
+      const response = await profileAPI.updateProfile(profileData);
+      
+      // Update auth context user data
+      const updatedUser = { 
+        ...user, 
+        name: profileData.name,
+        username: profileData.username,
+        bio: profileData.bio,
+        location: profileData.location,
+        website: profileData.website
+      };
+      updateUser(updatedUser);
+      localStorage.setItem('user_data', JSON.stringify(updatedUser));
+      
+      // Reload profile data
       await loadProfile();
       setEditing(false);
+      
     } catch (error) {
       console.error('Error updating profile:', error);
+      let errorMessage = 'Failed to update profile. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        errorMessage = Object.values(error.response.data.errors).flat().join(', ');
+      }
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -75,7 +130,7 @@ const Profile = () => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      alert('Please select an image file (JPEG, PNG, GIF)');
       return;
     }
 
@@ -92,24 +147,28 @@ const Profile = () => {
 
       const response = await mediaAPI.uploadAvatar(formData);
       
-      // Update local user state with new avatar
+      let avatarUrl = '';
+      
+      // Handle different response formats
       if (response.data.avatar_url) {
-        const updatedUser = { ...user, avatar: response.data.avatar_url };
-        updateUser(updatedUser);
-        localStorage.setItem('user_data', JSON.stringify(updatedUser));
-        
-        // Reload profile
-        await loadProfile();
-        alert('Profile picture updated successfully!');
+        avatarUrl = response.data.avatar_url;
+      } else if (response.data.avatar) {
+        avatarUrl = response.data.avatar;
+      } else if (response.data.paths?.url) {
+        avatarUrl = response.data.paths.url;
       } else if (response.data.success) {
-        // Handle alternative success response format
-        const updatedUser = { ...user, avatar: response.data.avatar_url || user.avatar };
+        // Try to get avatar from user data
+        avatarUrl = response.data.user?.avatar || user.avatar;
+      }
+      
+      if (avatarUrl) {
+        const updatedUser = { ...user, avatar: avatarUrl };
         updateUser(updatedUser);
         localStorage.setItem('user_data', JSON.stringify(updatedUser));
         await loadProfile();
         alert('Profile picture updated successfully!');
       } else {
-        throw new Error('Upload failed - no avatar URL returned');
+        throw new Error('No avatar URL returned from server');
       }
       
     } catch (error) {
@@ -118,6 +177,8 @@ const Profile = () => {
       let errorMessage = 'Failed to upload profile picture. Please try again.';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -141,19 +202,26 @@ const Profile = () => {
     );
   }
 
-  if (loading || !profile || !stats) {
+  if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="animate-pulse">
           <div className="h-48 bg-gray-200 rounded-xl mb-6"></div>
-          <div className="h-24 bg-gray-200 rounded-xl mb-6"></div>
+          <div className="flex items-start space-x-6">
+            <div className="w-32 h-32 bg-gray-200 rounded-full -mt-16"></div>
+            <div className="flex-1">
+              <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const currentUser = profile.user || user;
-  const userProfile = profile.profile || {};
+  const currentUser = profile?.user || user;
+  const userProfile = profile?.profile || {};
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -167,6 +235,9 @@ const Profile = () => {
                 src={userProfile.cover_photo}
                 alt="Cover"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-primary-500 to-primary-600"></div>
@@ -176,7 +247,7 @@ const Profile = () => {
           <div className="px-6 pb-6">
             {/* Profile Picture and User Info */}
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6 mb-4 pt-4">
-              {/* Profile Picture - Only show edit overlay when editing */}
+              {/* Profile Picture */}
               <div className="relative -mt-24 sm:-mt-20">
                 <div className="relative">
                   <img
@@ -185,10 +256,9 @@ const Profile = () => {
                     className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white shadow-lg object-cover bg-gray-200"
                     onError={(e) => {
                       e.target.src = '/default-avatar.png';
-                      e.target.onerror = null; // Prevent infinite loop
                     }}
                   />
-                  {/* Only show camera icon when editing mode is active */}
+                  {/* Show camera icon when editing mode is active */}
                   {editing && (
                     <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                       <input
@@ -218,8 +288,12 @@ const Profile = () => {
               <div className="flex-1 mt-4 sm:mt-0">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{currentUser.name}</h1>
-                    <p className="text-gray-600 text-lg mb-2">@{currentUser.username}</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                      {currentUser.name || 'User'}
+                    </h1>
+                    <p className="text-gray-600 text-lg mb-2">
+                      @{currentUser.username || 'username'}
+                    </p>
                     {userProfile.headline && (
                       <p className="text-xl text-gray-700 font-medium">{userProfile.headline}</p>
                     )}
@@ -241,23 +315,25 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name
+                      Full Name *
                     </label>
                     <input
                       type="text"
                       name="name"
                       defaultValue={currentUser.name}
+                      required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Username
+                      Username *
                     </label>
                     <input
                       type="text"
                       name="username"
                       defaultValue={currentUser.username}
+                      required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
@@ -269,7 +345,8 @@ const Profile = () => {
                   <input
                     type="text"
                     name="headline"
-                    defaultValue={userProfile.headline}
+                    defaultValue={userProfile.headline || ''}
+                    placeholder="e.g. Software Developer at Company"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
@@ -279,8 +356,9 @@ const Profile = () => {
                   </label>
                   <textarea
                     name="bio"
-                    defaultValue={currentUser.bio}
+                    defaultValue={currentUser.bio || ''}
                     rows="4"
+                    placeholder="Tell us about yourself..."
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                   />
                 </div>
@@ -292,7 +370,8 @@ const Profile = () => {
                     <input
                       type="text"
                       name="location"
-                      defaultValue={currentUser.location}
+                      defaultValue={currentUser.location || ''}
+                      placeholder="e.g. New York, NY"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
@@ -303,7 +382,8 @@ const Profile = () => {
                     <input
                       type="url"
                       name="website"
-                      defaultValue={currentUser.website}
+                      defaultValue={currentUser.website || ''}
+                      placeholder="https://example.com"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
@@ -328,35 +408,48 @@ const Profile = () => {
               </form>
             ) : (
               <div className="space-y-4 mt-6">
-                {currentUser.bio && (
-                  <p className="text-gray-700 text-lg leading-relaxed">{currentUser.bio}</p>
+                {(currentUser.bio || userProfile.bio) && (
+                  <p className="text-gray-700 text-lg leading-relaxed">
+                    {currentUser.bio || userProfile.bio}
+                  </p>
                 )}
                 
                 {/* Followers & Following Counts */}
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <span className="font-medium">{stats.followers_count} followers</span>
+                  <span className="font-medium">{stats?.followers_count || 0} followers</span>
                   <span className="text-gray-300">•</span>
-                  <span className="font-medium">{stats.following_count} following</span>
+                  <span className="font-medium">{stats?.following_count || 0} following</span>
                 </div>
 
                 <div className="flex flex-wrap gap-6 text-base text-gray-600">
-                  {currentUser.location && (
+                  {(currentUser.location || userProfile.location) && (
                     <div className="flex items-center space-x-2">
                       <MapPin size={18} />
-                      <span>{currentUser.location}</span>
+                      <span>{currentUser.location || userProfile.location}</span>
                     </div>
                   )}
-                  {currentUser.website && (
+                  {(currentUser.website || userProfile.website) && (
                     <div className="flex items-center space-x-2">
                       <Link size={18} />
-                      <a href={currentUser.website} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline font-medium">
-                        {currentUser.website.replace(/^https?:\/\//, '')}
+                      <a 
+                        href={currentUser.website || userProfile.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-primary-600 hover:underline font-medium"
+                      >
+                        {(currentUser.website || userProfile.website).replace(/^https?:\/\//, '')}
                       </a>
                     </div>
                   )}
                   <div className="flex items-center space-x-2">
                     <Calendar size={18} />
-                    <span>Joined {new Date(currentUser.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    <span>
+                      Joined {new Date(currentUser.created_at || user.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -367,19 +460,19 @@ const Profile = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.posts_count}</div>
+            <div className="text-2xl font-bold text-primary-600 mb-1">{stats?.posts_count || 0}</div>
             <div className="text-xs text-gray-600 font-medium">Posts</div>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.threads_count}</div>
+            <div className="text-2xl font-bold text-primary-600 mb-1">{stats?.threads_count || 0}</div>
             <div className="text-xs text-gray-600 font-medium">Threads</div>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.groups_count}</div>
+            <div className="text-2xl font-bold text-primary-600 mb-1">{stats?.groups_count || 0}</div>
             <div className="text-xs text-gray-600 font-medium">Groups</div>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-primary-600 mb-1">{stats.replies_count}</div>
+            <div className="text-2xl font-bold text-primary-600 mb-1">{stats?.replies_count || 0}</div>
             <div className="text-xs text-gray-600 font-medium">Comments</div>
           </div>
         </div>
@@ -387,7 +480,7 @@ const Profile = () => {
         {/* Recent Posts */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Posts</h2>
-          {posts.length === 0 ? (
+          {!posts || posts.length === 0 ? (
             <div className="text-center py-12">
               <Users className="mx-auto text-gray-400 mb-4" size={48} />
               <p className="text-gray-600 text-lg">No posts yet</p>

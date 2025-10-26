@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
+  withCredentials: false, // Set to false for production
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -36,7 +36,8 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (credentials) => api.post('/api/login', credentials),
   register: (userData) => api.post('/api/register', userData),
-  getProfile: () => api.get('/api/profile'), // No trailing slash
+  getProfile: () => api.get('/api/profile'),
+  logout: () => api.post('/api/logout'),
 };
 
 export const feedAPI = {
@@ -73,7 +74,12 @@ export const threadsAPI = {
 };
 
 export const profileAPI = {
-  getProfile: (username) => api.get(`/api/profile/${username || ''}`),
+  getProfile: (username) => {
+    if (username) {
+      return api.get(`/api/profile/${username}`);
+    }
+    return api.get('/api/profile');
+  },
   updateProfile: (profileData) => api.put('/api/profile', profileData),
   getPosts: (username) => api.get(`/api/profile/${username}/posts`),
   getThreads: (username) => api.get(`/api/profile/${username}/threads`),
@@ -95,6 +101,11 @@ export const mediaAPI = {
     },
   }),
   uploadPostMedia: (formData) => api.post('/api/upload/post-media', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+  uploadCover: (formData) => api.post('/api/upload/cover', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -140,4 +151,5 @@ export const earnAPI = {
   claimPoints: () => api.post('/api/earn/claim'),
   getPointsHistory: () => api.get('/api/earn/history'),
 };
+
 export default api;
