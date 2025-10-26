@@ -15,27 +15,27 @@ const Profile = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Improved avatar URL handling
+  // Fixed avatar URL handling
   const getAvatarUrl = (avatar) => {
     if (!avatar || avatar === 'default-avatar.png' || avatar.includes('default-avatar')) {
       return '/default-avatar.png';
     }
     
+    // If it's already a full URL, return as is
     if (avatar.startsWith('http')) {
       return avatar;
     }
     
-    if (avatar.startsWith('/')) {
-      return avatar;
+    // If it's a storage path, construct the full URL
+    if (avatar.startsWith('users/avatars/') || avatar.startsWith('storage/')) {
+      const baseUrl = import.meta.env.VITE_API_URL;
+      // Remove 'storage/' prefix if present and ensure proper URL
+      const cleanPath = avatar.replace('storage/', '');
+      return `${baseUrl}/storage/${cleanPath}`;
     }
     
-    // For backend stored avatars
-    const baseUrl = import.meta.env.VITE_API_URL;
-    if (avatar.includes('storage/')) {
-      return `${baseUrl}/${avatar}`;
-    }
-    
-    return `${baseUrl}/storage/${avatar.replace('public/', '')}`;
+    // Default fallback
+    return '/default-avatar.png';
   };
 
   const loadProfile = async () => {
@@ -145,7 +145,9 @@ const Profile = () => {
       const formData = new FormData();
       formData.append('avatar', file);
 
+      console.log('Uploading avatar...', file);
       const response = await mediaAPI.uploadAvatar(formData);
+      console.log('Upload response:', response.data);
       
       let avatarUrl = '';
       
@@ -156,18 +158,22 @@ const Profile = () => {
         avatarUrl = response.data.avatar;
       } else if (response.data.paths?.url) {
         avatarUrl = response.data.paths.url;
+      } else if (response.data.user?.avatar) {
+        avatarUrl = response.data.user.avatar;
       } else if (response.data.success) {
-        // Try to get avatar from user data
-        avatarUrl = response.data.user?.avatar || user.avatar;
+        // Try to get avatar from the response data
+        avatarUrl = response.data.avatar_url || response.data.avatar;
       }
       
       if (avatarUrl) {
+        console.log('New avatar URL:', avatarUrl);
         const updatedUser = { ...user, avatar: avatarUrl };
         updateUser(updatedUser);
         localStorage.setItem('user_data', JSON.stringify(updatedUser));
         await loadProfile();
         alert('Profile picture updated successfully!');
       } else {
+        console.error('No avatar URL in response:', response.data);
         throw new Error('No avatar URL returned from server');
       }
       
@@ -189,6 +195,38 @@ const Profile = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleCoverPhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (JPEG, PNG)');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('cover_photo', file);
+
+      const response = await profileAPI.uploadCoverPhoto(formData);
+      
+      if (response.data.cover_photo_url) {
+        await loadProfile();
+        alert('Cover photo updated successfully!');
+      }
+    } catch (error) {
+      console.error('Error uploading cover photo:', error);
+      alert('Failed to upload cover photo. Please try again.');
     }
   };
 
@@ -228,8 +266,8 @@ const Profile = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Cover Photo & Avatar */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-          {/* Cover Photo */}
-          <div className="h-48 bg-gradient-to-r from-primary-500 to-primary-600 relative">
+          {/* Cover Photo with Upload Option */}
+          <div className="h-48 bg-gradient-to-r from-primary-500 to-primary-600 relative group">
             {userProfile.cover_photo ? (
               <img
                 src={userProfile.cover_photo}
@@ -242,6 +280,25 @@ const Profile = () => {
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-primary-500 to-primary-600"></div>
             )}
+            
+            {editing && (
+              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <input
+                  type="file"
+                  id="cover-photo"
+                  accept="image/*"
+                  onChange={handleCoverPhotoUpload}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="cover-photo"
+                  className="bg-white text-gray-700 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                >
+                  <Camera size={18} className="inline mr-2" />
+                  {userProfile.cover_photo ? 'Change Cover' : 'Add Cover Photo'}
+                </label>
+              </div>
+            )}
           </div>
           
           <div className="px-6 pb-6">
@@ -249,18 +306,19 @@ const Profile = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6 mb-4 pt-4">
               {/* Profile Picture */}
               <div className="relative -mt-24 sm:-mt-20">
-                <div className="relative">
+                <div className="relative group">
                   <img
                     src={getAvatarUrl(currentUser.avatar)}
                     alt={currentUser.name}
                     className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white shadow-lg object-cover bg-gray-200"
                     onError={(e) => {
+                      console.log('Avatar load failed, using default');
                       e.target.src = '/default-avatar.png';
                     }}
                   />
                   {/* Show camera icon when editing mode is active */}
                   {editing && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                       <input
                         type="file"
                         ref={fileInputRef}
