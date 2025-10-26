@@ -25,28 +25,22 @@ const Profile = () => {
       return '/default-avatar.png';
     }
     
-    // If it's already a full URL (from backend response), return as is
+    // If it's already a full URL (starts with http), return as is
     if (avatar.startsWith('http')) {
       return avatar;
     }
     
-    // If it's a storage path that starts with 'users/avatars/', the backend should return full URL
-    // But if it doesn't, construct it properly
+    // If it's a relative path starting with /storage/, construct full URL
+    if (avatar.startsWith('/storage/')) {
+      const baseUrl = import.meta.env.VITE_API_URL;
+      // Remove the leading slash to avoid double slashes
+      const cleanPath = avatar.startsWith('/') ? avatar.substring(1) : avatar;
+      return `${baseUrl}/${cleanPath}`;
+    }
+    
+    // If it's any other relative path, assume it's a storage path
     const baseUrl = import.meta.env.VITE_API_URL;
-    
-    // Remove any duplicate 'storage/' prefixes
-    let cleanPath = avatar;
-    if (avatar.startsWith('storage/')) {
-      cleanPath = avatar.replace('storage/', '');
-    }
-    
-    // If the path doesn't start with storage/, add it
-    if (!cleanPath.startsWith('storage/') && !cleanPath.startsWith('/storage/')) {
-      return `${baseUrl}/storage/${cleanPath}`;
-    }
-    
-    // If it already has storage/, use as is
-    return `${baseUrl}/${cleanPath}`;
+    return `${baseUrl}/storage/${avatar}`;
   };
 
   const loadProfile = async () => {
