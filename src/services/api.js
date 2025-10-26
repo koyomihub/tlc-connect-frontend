@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: false, // Set to false for production
+  withCredentials: false,
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -83,7 +83,6 @@ export const profileAPI = {
   updateProfile: (profileData) => api.put('/api/profile', profileData),
   getPosts: (username) => api.get(`/api/profile/${username}/posts`),
   getThreads: (username) => api.get(`/api/profile/${username}/threads`),
-  // Add these cover photo methods:
   uploadCoverPhoto: (formData) => api.post('/api/profile/cover-photo', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -108,11 +107,6 @@ export const mediaAPI = {
     },
   }),
   uploadPostMedia: (formData) => api.post('/api/upload/post-media', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  }),
-  uploadCover: (formData) => api.post('/api/upload/cover', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

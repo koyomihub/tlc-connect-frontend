@@ -16,7 +16,7 @@ const Profile = () => {
   const fileInputRef = useRef(null);
   const coverInputRef = useRef(null);
 
-  // Fixed avatar URL handling - SIMPLIFIED VERSION
+  // Fixed avatar URL handling
   const getAvatarUrl = (avatar) => {
     console.log('Getting avatar URL for:', avatar);
     
@@ -29,13 +29,13 @@ const Profile = () => {
       return avatar;
     }
     
-    // If it's a storage path, construct the full URL
+    // If it's a storage path, construct the proper URL
     const baseUrl = import.meta.env.VITE_API_URL;
     if (avatar.startsWith('users/avatars/')) {
       return `${baseUrl}/storage/${avatar}`;
     }
     
-    // For any other case, try to construct URL
+    // For any path that doesn't start with /, assume it's a storage path
     if (!avatar.startsWith('/')) {
       return `${baseUrl}/storage/${avatar}`;
     }
