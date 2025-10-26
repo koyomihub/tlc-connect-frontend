@@ -83,7 +83,7 @@ export const profileAPI = {
   updateProfile: (profileData) => api.put('/api/profile', profileData),
   getPosts: (username) => api.get(`/api/profile/${username}/posts`),
   getThreads: (username) => api.get(`/api/profile/${username}/threads`),
-  // Add cover photo upload
+  // Add these cover photo methods:
   uploadCoverPhoto: (formData) => api.post('/api/profile/cover-photo', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',

@@ -14,9 +14,12 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef(null);
+  const coverInputRef = useRef(null);
 
-  // Fixed avatar URL handling
+  // Fixed avatar URL handling - SIMPLIFIED VERSION
   const getAvatarUrl = (avatar) => {
+    console.log('Getting avatar URL for:', avatar);
+    
     if (!avatar || avatar === 'default-avatar.png' || avatar.includes('default-avatar')) {
       return '/default-avatar.png';
     }
@@ -27,11 +30,14 @@ const Profile = () => {
     }
     
     // If it's a storage path, construct the full URL
-    if (avatar.startsWith('users/avatars/') || avatar.startsWith('storage/')) {
-      const baseUrl = import.meta.env.VITE_API_URL;
-      // Remove 'storage/' prefix if present and ensure proper URL
-      const cleanPath = avatar.replace('storage/', '');
-      return `${baseUrl}/storage/${cleanPath}`;
+    const baseUrl = import.meta.env.VITE_API_URL;
+    if (avatar.startsWith('users/avatars/')) {
+      return `${baseUrl}/storage/${avatar}`;
+    }
+    
+    // For any other case, try to construct URL
+    if (!avatar.startsWith('/')) {
+      return `${baseUrl}/storage/${avatar}`;
     }
     
     // Default fallback
@@ -42,6 +48,7 @@ const Profile = () => {
     try {
       setLoading(true);
       const response = await profileAPI.getProfile();
+      console.log('Profile response:', response.data);
       
       if (response.data) {
         setProfile(response.data);
@@ -149,24 +156,11 @@ const Profile = () => {
       const response = await mediaAPI.uploadAvatar(formData);
       console.log('Upload response:', response.data);
       
-      let avatarUrl = '';
-      
-      // Handle different response formats
+      // Handle response - use the avatar_url directly
       if (response.data.avatar_url) {
-        avatarUrl = response.data.avatar_url;
-      } else if (response.data.avatar) {
-        avatarUrl = response.data.avatar;
-      } else if (response.data.paths?.url) {
-        avatarUrl = response.data.paths.url;
-      } else if (response.data.user?.avatar) {
-        avatarUrl = response.data.user.avatar;
-      } else if (response.data.success) {
-        // Try to get avatar from the response data
-        avatarUrl = response.data.avatar_url || response.data.avatar;
-      }
-      
-      if (avatarUrl) {
+        const avatarUrl = response.data.avatar_url;
         console.log('New avatar URL:', avatarUrl);
+        
         const updatedUser = { ...user, avatar: avatarUrl };
         updateUser(updatedUser);
         localStorage.setItem('user_data', JSON.stringify(updatedUser));
@@ -218,7 +212,9 @@ const Profile = () => {
       const formData = new FormData();
       formData.append('cover_photo', file);
 
+      console.log('Uploading cover photo...');
       const response = await profileAPI.uploadCoverPhoto(formData);
+      console.log('Cover photo response:', response.data);
       
       if (response.data.cover_photo_url) {
         await loadProfile();
@@ -226,7 +222,26 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error uploading cover photo:', error);
-      alert('Failed to upload cover photo. Please try again.');
+      let errorMessage = 'Failed to upload cover photo. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      alert(errorMessage);
+    } finally {
+      if (coverInputRef.current) {
+        coverInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveCoverPhoto = async () => {
+    try {
+      await profileAPI.removeCoverPhoto();
+      await loadProfile();
+      alert('Cover photo removed successfully!');
+    } catch (error) {
+      console.error('Error removing cover photo:', error);
+      alert('Failed to remove cover photo. Please try again.');
     }
   };
 
@@ -261,6 +276,9 @@ const Profile = () => {
   const currentUser = profile?.user || user;
   const userProfile = profile?.profile || {};
 
+  console.log('Current user avatar:', currentUser.avatar);
+  console.log('User profile data:', userProfile);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -274,6 +292,7 @@ const Profile = () => {
                 alt="Cover"
                 className="w-full h-full object-cover"
                 onError={(e) => {
+                  console.log('Cover photo failed to load');
                   e.target.style.display = 'none';
                 }}
               />
@@ -285,18 +304,28 @@ const Profile = () => {
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <input
                   type="file"
-                  id="cover-photo"
+                  ref={coverInputRef}
                   accept="image/*"
                   onChange={handleCoverPhotoUpload}
                   className="hidden"
                 />
-                <label
-                  htmlFor="cover-photo"
-                  className="bg-white text-gray-700 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                >
-                  <Camera size={18} className="inline mr-2" />
-                  {userProfile.cover_photo ? 'Change Cover' : 'Add Cover Photo'}
-                </label>
+                <div className="flex flex-col space-y-2">
+                  <button
+                    onClick={() => coverInputRef.current?.click()}
+                    className="bg-white text-gray-700 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                  >
+                    <Camera size={18} className="inline mr-2" />
+                    {userProfile.cover_photo ? 'Change Cover' : 'Add Cover Photo'}
+                  </button>
+                  {userProfile.cover_photo && (
+                    <button
+                      onClick={handleRemoveCoverPhoto}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-red-700 transition-colors"
+                    >
+                      Remove Cover
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -314,6 +343,7 @@ const Profile = () => {
                     onError={(e) => {
                       console.log('Avatar load failed, using default');
                       e.target.src = '/default-avatar.png';
+                      e.target.onerror = null; // Prevent infinite loop
                     }}
                   />
                   {/* Show camera icon when editing mode is active */}
@@ -330,6 +360,7 @@ const Profile = () => {
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploadingAvatar}
                         className="text-white p-3 rounded-full bg-primary-600 hover:bg-primary-700 transition-colors"
+                        title="Change profile picture"
                       >
                         {uploadingAvatar ? (
                           <Loader className="animate-spin" size={20} />
