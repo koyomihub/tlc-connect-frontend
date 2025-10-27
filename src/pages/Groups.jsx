@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { groupsAPI } from '../services/api';
 import { Users, Plus, Search, Loader, MessageSquare, User } from 'lucide-react';
-import { AvatarImage } from '../utils/avatarHelper.jsx';
 
 const Groups = () => {
   const { user } = useAuth();
