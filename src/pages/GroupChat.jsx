@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { groupsAPI } from '../../services/api';
 import { Send, Loader, ArrowLeft, Users } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AvatarImage } from '../../utils/avatarHelper';
+import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const GroupChat = () => {
   const { user } = useAuth();
@@ -145,12 +145,7 @@ const GroupChat = () => {
                   message.user_id === user.id ? 'flex-row-reverse space-x-reverse' : ''
                 }`}
               >
-                <AvatarImage
-                  src={message.user?.avatar}
-                  alt={message.user?.name}
-                  className="w-8 h-8 rounded-full flex-shrink-0"
-                  fallbackName={message.user?.name}
-                />
+                <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
                 <div className={`max-w-xs lg:max-w-md ${
                   message.user_id === user.id ? 'text-right' : ''
                 }`}>

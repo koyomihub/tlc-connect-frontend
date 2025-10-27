@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { groupsAPI } from '../../services/api';
 import { Mail, Users, Check, X, Loader } from 'lucide-react';
-import { AvatarImage } from '../../utils/avatarHelper';
+import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const GroupInvitations = () => {
   const { user } = useAuth();

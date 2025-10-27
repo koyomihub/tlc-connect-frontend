@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { groupsAPI } from '../../services/api';
 import { Users, UserPlus, Mail, Loader, ArrowLeft, MessageSquare } from 'lucide-react';
-import { AvatarImage } from '../../utils/avatarHelper';
+import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const GroupDetail = () => {
   const { user } = useAuth();
@@ -201,12 +201,7 @@ const GroupDetail = () => {
               {invitations.map(invitation => (
                 <div key={invitation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <AvatarImage
-                      src={invitation.invitee?.avatar}
-                      alt={invitation.invitee?.name}
-                      className="w-8 h-8 rounded-full"
-                      fallbackName={invitation.invitee?.name}
-                    />
+                    <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
                     <div>
                       <p className="font-medium text-gray-900">{invitation.invitee?.name}</p>
                       <p className="text-sm text-gray-500">Invited {new Date(invitation.created_at).toLocaleDateString()}</p>
@@ -236,12 +231,7 @@ const GroupDetail = () => {
                 mutualFollowers.map(follower => (
                   <div key={follower.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <AvatarImage
-                        src={follower.avatar}
-                        alt={follower.name}
-                        className="w-10 h-10 rounded-full"
-                        fallbackName={follower.name}
-                      />
+                      <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
                       <div>
                         <p className="font-medium text-gray-900">{follower.name}</p>
                         <p className="text-sm text-gray-500">@{follower.username}</p>
