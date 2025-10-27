@@ -338,7 +338,7 @@ const Profile = () => {
                     className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white shadow-lg object-cover bg-gray-200"
                     onError={(e) => {
                       console.log('Avatar load failed, using default');
-                      e.target.src = '/default-avatar.png';
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name || 'User')}&background=random&color=fff&size=128`;
                       e.target.onerror = null; // Prevent infinite loop
                     }}
                   />
