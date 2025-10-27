@@ -126,9 +126,12 @@ const CreatePost = ({ onPostCreated }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex space-x-4">
         <img
-          src={user?.avatar || '/default-avatar.png'}
+          src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`}
           alt={user?.name}
           className="w-12 h-12 rounded-full object-cover"
+          onError={(e) => {
+            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`;
+          }}
         />
         
         <div className="flex-1">
