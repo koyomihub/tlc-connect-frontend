@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Home, Users, MessageSquare, DollarSign, User, Mail, LogOut } from 'lucide-react';
 import { groupsAPI } from '../../services/api';
-import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -15,7 +14,6 @@ const Navbar = () => {
     
     try {
       const response = await groupsAPI.getUserInvitations();
-      // The total count is now in response.data.invitations.total
       setPendingInvitationsCount(response.data.invitations.total || 0);
     } catch (error) {
       console.error('Error loading invitations count:', error);
@@ -50,9 +48,8 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Navigation Links - Arranged in requested order */}
+          {/* Navigation Links */}
           <div className="flex items-center space-x-1">
-            {/* Feed */}
             <NavLink
               to="/feed"
               icon={Home}
@@ -60,7 +57,6 @@ const Navbar = () => {
               isActive={isActive('/feed')}
             />
             
-            {/* Threads */}
             <NavLink
               to="/threads"
               icon={MessageSquare}
@@ -68,7 +64,6 @@ const Navbar = () => {
               isActive={isActive('/threads')}
             />
             
-            {/* Groups */}
             <NavLink
               to="/groups"
               icon={Users}
@@ -76,7 +71,6 @@ const Navbar = () => {
               isActive={isActive('/groups')}
             />
             
-            {/* Earn */}
             <NavLink
               to="/earn"
               icon={DollarSign}
@@ -84,7 +78,6 @@ const Navbar = () => {
               isActive={isActive('/earn')}
             />
             
-            {/* Invitations Link with Badge */}
             <NavLink
               to="/invitations"
               icon={Mail}
@@ -93,7 +86,6 @@ const Navbar = () => {
               badgeCount={pendingInvitationsCount}
             />
 
-            {/* Profile */}
             <NavLink
               to="/profile"
               icon={User}
@@ -105,7 +97,14 @@ const Navbar = () => {
           {/* User Menu */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+              <img
+                src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff&size=128`}
+                alt={user.name}
+                className="w-8 h-8 rounded-full"
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff&size=128`;
+                }}
+              />
               <span className="text-sm text-gray-700">Hello, {user.name}</span>
             </div>
             <button

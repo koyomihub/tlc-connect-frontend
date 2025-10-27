@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { threadsAPI } from '../../services/api';
+import { useAuth } from '../context/AuthContext';
+import { threadsAPI } from '../services/api';
 import { MessageSquare, Plus, Users, Clock, Loader, Send, User } from 'lucide-react';
-import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const Threads = () => {
   const { user } = useAuth();
@@ -23,10 +22,8 @@ const Threads = () => {
       
       let response;
       if (tab === 'my') {
-        // Load only user's threads using the fixed route
         response = await threadsAPI.getMyThreads();
       } else {
-        // Load all threads
         response = await threadsAPI.getThreads();
       }
       
@@ -85,11 +82,9 @@ const Threads = () => {
   const handleAddReply = async (e) => {
     e.preventDefault();
     
-    // Store content and clear immediately
     const content = replyContent;
     if (!content.trim() || !selectedThread || postingReply) return;
 
-    // Clear form IMMEDIATELY
     setReplyContent('');
     setPostingReply(true);
 
@@ -97,10 +92,8 @@ const Threads = () => {
       const response = await threadsAPI.addReply(selectedThread.id, content);
       console.log('Reply response:', response.data);
       
-      // Force state update by creating new array
       setReplies(prev => [...prev, { ...response.data.reply }]);
       
-      // Update thread count
       setThreads(prev => prev.map(thread => 
         thread.id === selectedThread.id 
           ? { ...thread, comments_count: (thread.comments_count || 0) + 1 }
@@ -111,7 +104,6 @@ const Threads = () => {
       
     } catch (error) {
       console.error('Error adding reply:', error);
-      // If error, restore the content so user can try again
       setReplyContent(content);
       alert('Failed to add reply. Please try again.');
     } finally {
@@ -128,7 +120,6 @@ const Threads = () => {
     });
   };
 
-  // Debug effect to monitor state
   useEffect(() => {
     console.log('Current state:', { 
       replyContent, 
@@ -237,7 +228,14 @@ const Threads = () => {
                     </h3>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center space-x-2">
-                        <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+                        <img
+                          src={thread.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.user?.name || 'User')}&background=random&color=fff&size=128`}
+                          alt={thread.user?.name}
+                          className="w-5 h-5 rounded-full"
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.user?.name || 'User')}&background=random&color=fff&size=128`;
+                          }}
+                        />
                         <span>{thread.user?.name}</span>
                         {activeTab === 'all' && thread.user_id === user.id && (
                           <User size={12} className="text-primary-600" title="Your thread" />
@@ -269,7 +267,14 @@ const Threads = () => {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+                    <img
+                      src={selectedThread.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedThread.user?.name || 'User')}&background=random&color=fff&size=128`}
+                      alt={selectedThread.user?.name}
+                      className="w-10 h-10 rounded-full"
+                      onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedThread.user?.name || 'User')}&background=random&color=fff&size=128`;
+                      }}
+                    />
                     <div>
                       <h3 className="font-semibold text-gray-900">{selectedThread.user?.name}</h3>
                       <p className="text-sm text-gray-500">{formatDate(selectedThread.created_at)}</p>
@@ -317,7 +322,14 @@ const Threads = () => {
                   <div className="space-y-4 mb-6">
                     {replies.map(reply => (
                       <div key={reply.id} className="flex space-x-3">
-                        <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+                        <img
+                          src={reply.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.user?.name || 'User')}&background=random&color=fff&size=128`}
+                          alt={reply.user?.name}
+                          className="w-8 h-8 rounded-full flex-shrink-0"
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.user?.name || 'User')}&background=random&color=fff&size=128`;
+                          }}
+                        />
                         <div className="flex-1">
                           <div className="bg-gray-50 rounded-lg p-3">
                             <div className="flex items-center justify-between mb-1">
@@ -338,7 +350,14 @@ const Threads = () => {
 
                 {/* Reply Form */}
                 <form onSubmit={handleAddReply} className="flex items-start space-x-3">
-                  <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+                  <img
+                    src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff&size=128`}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full flex-shrink-0 mt-3"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff&size=128`;
+                    }}
+                  />
                   <div className="flex-1 flex items-center space-x-3">
                     <div className="flex-1">
                       <textarea

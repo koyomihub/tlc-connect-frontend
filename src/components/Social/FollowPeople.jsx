@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { followAPI } from "../../services/api";
 import { UserPlus, UserCheck, Loader, Users } from 'lucide-react';
-import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const FollowPeople = () => {
   const [suggestions, setSuggestions] = useState([]);
@@ -87,7 +86,14 @@ const FollowPeople = () => {
         {suggestions.map(user => (
           <div key={user.id} className="flex items-center justify-between">
             <div className="flex items-center space-x-3 flex-1 min-w-0">
-              <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+              <img
+                src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff&size=128`}
+                alt={user.name}
+                className="w-10 h-10 rounded-full object-cover bg-gray-200 flex-shrink-0"
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random&color=fff&size=128`;
+                }}
+              />
               <div className="min-w-0 flex-1">
                 <h4 className="font-medium text-gray-900 truncate">{user.name}</h4>
                 <p className="text-sm text-gray-500 truncate">@{user.username}</p>

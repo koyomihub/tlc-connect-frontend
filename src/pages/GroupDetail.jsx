@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { groupsAPI } from '../../services/api';
+import { useAuth } from '../context/AuthContext';
+import { groupsAPI } from '../services/api';
 import { Users, UserPlus, Mail, Loader, ArrowLeft, MessageSquare } from 'lucide-react';
-import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const GroupDetail = () => {
   const { user } = useAuth();
@@ -45,7 +44,7 @@ const GroupDetail = () => {
     setInviting(true);
     try {
       await groupsAPI.inviteUser(groupId, { invitee_id: inviteeId });
-      await loadGroupData(); // Refresh the data to show the new invitation
+      await loadGroupData();
       setShowInviteModal(false);
     } catch (error) {
       console.error('Error inviting user:', error);
@@ -58,7 +57,6 @@ const GroupDetail = () => {
   const handleAcceptInvitation = async () => {
     try {
       const response = await groupsAPI.acceptInvitation(groupId);
-      // Refresh the group data to update the invitation status
       await loadGroupData();
       navigate(`/groups/${groupId}/chat`);
     } catch (error) {
@@ -70,7 +68,6 @@ const GroupDetail = () => {
   const handleDeclineInvitation = async () => {
     try {
       const response = await groupsAPI.declineInvitation(groupId);
-      // Refresh the group data to update the invitation status
       await loadGroupData();
       navigate('/groups');
     } catch (error) {
@@ -201,7 +198,14 @@ const GroupDetail = () => {
               {invitations.map(invitation => (
                 <div key={invitation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+                    <img
+                      src={invitation.invitee?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(invitation.invitee?.name || 'User')}&background=random&color=fff&size=128`}
+                      alt={invitation.invitee?.name}
+                      className="w-8 h-8 rounded-full"
+                      onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(invitation.invitee?.name || 'User')}&background=random&color=fff&size=128`;
+                      }}
+                    />
                     <div>
                       <p className="font-medium text-gray-900">{invitation.invitee?.name}</p>
                       <p className="text-sm text-gray-500">Invited {new Date(invitation.created_at).toLocaleDateString()}</p>
@@ -231,7 +235,14 @@ const GroupDetail = () => {
                 mutualFollowers.map(follower => (
                   <div key={follower.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+                      <img
+                        src={follower.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(follower.name || 'User')}&background=random&color=fff&size=128`}
+                        alt={follower.name}
+                        className="w-10 h-10 rounded-full"
+                        onError={(e) => {
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(follower.name || 'User')}&background=random&color=fff&size=128`;
+                        }}
+                      />
                       <div>
                         <p className="font-medium text-gray-900">{follower.name}</p>
                         <p className="text-sm text-gray-500">@{follower.username}</p>

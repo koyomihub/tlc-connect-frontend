@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { groupsAPI } from '../../services/api';
+import { useAuth } from '../context/AuthContext';
+import { groupsAPI } from '../services/api';
 import { Send, Loader, ArrowLeft, Users } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const GroupChat = () => {
   const { user } = useAuth();
@@ -145,7 +144,14 @@ const GroupChat = () => {
                   message.user_id === user.id ? 'flex-row-reverse space-x-reverse' : ''
                 }`}
               >
-                <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+                <img
+                  src={message.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.user?.name || 'User')}&background=random&color=fff&size=128`}
+                  alt={message.user?.name}
+                  className="w-8 h-8 rounded-full flex-shrink-0"
+                  onError={(e) => {
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(message.user?.name || 'User')}&background=random&color=fff&size=128`;
+                  }}
+                />
                 <div className={`max-w-xs lg:max-w-md ${
                   message.user_id === user.id ? 'text-right' : ''
                 }`}>

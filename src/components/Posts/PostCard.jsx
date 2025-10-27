@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Heart, MessageCircle, Share, MoreHorizontal, Send } from 'lucide-react';
 import { reactionsAPI, postsAPI } from "../../services/api";
 import { useAuth } from '../../context/AuthContext';
-import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const PostCard = ({ post }) => {
   const [isLiked, setIsLiked] = useState(post.is_liked ?? false);
@@ -101,7 +100,14 @@ const PostCard = ({ post }) => {
       {/* Post Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+          <img
+            src={post.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user?.name || 'User')}&background=random&color=fff&size=128`}
+            alt={post.user?.name}
+            className="w-10 h-10 rounded-full object-cover bg-gray-200"
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user?.name || 'User')}&background=random&color=fff&size=128`;
+            }}
+          />
           <div>
             <h3 className="font-semibold text-gray-900">{post.user?.name}</h3>
             <p className="text-sm text-gray-500">
@@ -177,7 +183,14 @@ const PostCard = ({ post }) => {
       {showComments && (
         <div className="border-t border-gray-100 mt-4 pt-4">
           <div className="flex space-x-3 mb-4">
-            <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+            <img
+              src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`}
+              alt={user?.name}
+              className="w-8 h-8 rounded-full object-cover bg-gray-200"
+              onError={(e) => {
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`;
+              }}
+            />
             <form onSubmit={handleAddComment} className="flex-1 flex space-x-2">
               <input
                 type="text"
@@ -205,7 +218,14 @@ const PostCard = ({ post }) => {
             ) : comments.length > 0 ? (
               comments.map(comment => (
                 <div key={comment.id} className="flex space-x-3">
-                  <img {...getAvatarProps(user.avatar, user.name, user.name, "w-8 h-8 rounded-full")} />
+                  <img
+                    src={comment.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'User')}&background=random&color=fff&size=128`}
+                    alt={comment.user?.name}
+                    className="w-8 h-8 rounded-full object-cover bg-gray-200"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'User')}&background=random&color=fff&size=128`;
+                    }}
+                  />
                   <div className="flex-1">
                     <div className="bg-gray-100 rounded-lg px-4 py-2">
                       <h4 className="font-semibold text-sm">{comment.user?.name}</h4>

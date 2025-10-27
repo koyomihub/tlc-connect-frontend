@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { groupsAPI } from '../../services/api';
+import { useAuth } from '../context/AuthContext';
+import { groupsAPI } from '../services/api';
 import { Mail, Users, Check, X, Loader } from 'lucide-react';
-import { AvatarImage } from '../../utils/avatarHelper.jsx';
 
 const GroupInvitations = () => {
   const { user } = useAuth();
@@ -13,7 +12,6 @@ const GroupInvitations = () => {
   const loadInvitations = async () => {
     try {
       const response = await groupsAPI.getUserInvitations();
-      // The invitations are now in response.data.invitations.data
       setInvitations(response.data.invitations.data || []);
       setPendingInvitationsCount(response.data.invitations.total || 0);
     } catch (error) {
@@ -32,8 +30,7 @@ const GroupInvitations = () => {
   const handleAccept = async (groupId) => {
     try {
       const response = await groupsAPI.acceptInvitation(groupId);
-      await loadInvitations(); // Refresh the list
-      // Update the counter with the response data
+      await loadInvitations();
       if (response.data.pending_count !== undefined) {
         setPendingInvitationsCount(response.data.pending_count);
       }
@@ -46,8 +43,7 @@ const GroupInvitations = () => {
   const handleDecline = async (groupId) => {
     try {
       const response = await groupsAPI.declineInvitation(groupId);
-      await loadInvitations(); // Refresh the list
-      // Update the counter with the response data
+      await loadInvitations();
       if (response.data.pending_count !== undefined) {
         setPendingInvitationsCount(response.data.pending_count);
       }
