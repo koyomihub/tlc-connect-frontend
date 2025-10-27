@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Heart, MessageCircle, Share, MoreHorizontal, Send } from 'lucide-react';
 import { reactionsAPI, postsAPI } from "../../services/api";
 import { useAuth } from '../../context/AuthContext';
+import { AvatarImage } from '../../utils/avatarHelper';
 
 const PostCard = ({ post }) => {
   const [isLiked, setIsLiked] = useState(post.is_liked ?? false);
@@ -95,29 +96,16 @@ const PostCard = ({ post }) => {
     });
   };
 
-  // Get avatar URL with proper fallback
-  const getAvatarUrl = (userData) => {
-    if (userData?.avatar) {
-      if (userData.avatar.startsWith('http')) return userData.avatar;
-      if (userData.avatar.startsWith('/')) return userData.avatar;
-      return `${import.meta.env.VITE_API_URL}/storage/${userData.avatar.replace('public/', '')}`;
-    }
-    return '/default-avatar.png';
-  };
-
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       {/* Post Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <img
-            src={getAvatarUrl(post.user)}
+          <AvatarImage
+            src={post.user?.avatar}
             alt={post.user?.name}
             className="w-10 h-10 rounded-full object-cover bg-gray-200"
-            onError={(e) => {
-              e.target.src = '/default-avatar.png';
-              e.target.onerror = null; // Prevent infinite loop
-            }}
+            fallbackName={post.user?.name}
           />
           <div>
             <h3 className="font-semibold text-gray-900">{post.user?.name}</h3>
@@ -194,14 +182,11 @@ const PostCard = ({ post }) => {
       {showComments && (
         <div className="border-t border-gray-100 mt-4 pt-4">
           <div className="flex space-x-3 mb-4">
-            <img
-              src={getAvatarUrl(user)}
+            <AvatarImage
+              src={user?.avatar}
               alt={user?.name}
               className="w-8 h-8 rounded-full object-cover bg-gray-200"
-              onError={(e) => {
-                e.target.src = '/default-avatar.png';
-                e.target.onerror = null;
-              }}
+              fallbackName={user?.name}
             />
             <form onSubmit={handleAddComment} className="flex-1 flex space-x-2">
               <input
@@ -230,14 +215,11 @@ const PostCard = ({ post }) => {
             ) : comments.length > 0 ? (
               comments.map(comment => (
                 <div key={comment.id} className="flex space-x-3">
-                  <img
-                    src={getAvatarUrl(comment.user)}
+                  <AvatarImage
+                    src={comment.user?.avatar}
                     alt={comment.user?.name}
                     className="w-8 h-8 rounded-full object-cover bg-gray-200"
-                    onError={(e) => {
-                      e.target.src = '/default-avatar.png';
-                      e.target.onerror = null;
-                    }}
+                    fallbackName={comment.user?.name}
                   />
                   <div className="flex-1">
                     <div className="bg-gray-100 rounded-lg px-4 py-2">

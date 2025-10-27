@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { threadsAPI } from '../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { threadsAPI } from '../../services/api';
 import { MessageSquare, Plus, Users, Clock, Loader, Send, User } from 'lucide-react';
+import { AvatarImage } from '../../utils/avatarHelper';
 
 const Threads = () => {
   const { user } = useAuth();
@@ -236,10 +237,11 @@ const Threads = () => {
                     </h3>
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center space-x-2">
-                        <img
-                          src={thread.user?.avatar || '/default-avatar.png'}
+                        <AvatarImage
+                          src={thread.user?.avatar}
                           alt={thread.user?.name}
                           className="w-5 h-5 rounded-full"
+                          fallbackName={thread.user?.name}
                         />
                         <span>{thread.user?.name}</span>
                         {activeTab === 'all' && thread.user_id === user.id && (
@@ -272,10 +274,11 @@ const Threads = () => {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <img
-                      src={selectedThread.user?.avatar || '/default-avatar.png'}
+                    <AvatarImage
+                      src={selectedThread.user?.avatar}
                       alt={selectedThread.user?.name}
                       className="w-10 h-10 rounded-full"
+                      fallbackName={selectedThread.user?.name}
                     />
                     <div>
                       <h3 className="font-semibold text-gray-900">{selectedThread.user?.name}</h3>
@@ -324,10 +327,11 @@ const Threads = () => {
                   <div className="space-y-4 mb-6">
                     {replies.map(reply => (
                       <div key={reply.id} className="flex space-x-3">
-                        <img
-                          src={reply.user?.avatar || '/default-avatar.png'}
+                        <AvatarImage
+                          src={reply.user?.avatar}
                           alt={reply.user?.name}
                           className="w-8 h-8 rounded-full flex-shrink-0"
+                          fallbackName={reply.user?.name}
                         />
                         <div className="flex-1">
                           <div className="bg-gray-50 rounded-lg p-3">
@@ -349,10 +353,11 @@ const Threads = () => {
 
                 {/* Reply Form */}
                 <form onSubmit={handleAddReply} className="flex items-start space-x-3">
-                  <img
-                    src={user.avatar || '/default-avatar.png'}
+                  <AvatarImage
+                    src={user.avatar}
                     alt={user.name}
                     className="w-8 h-8 rounded-full flex-shrink-0 mt-3"
+                    fallbackName={user.name}
                   />
                   <div className="flex-1 flex items-center space-x-3">
                     <div className="flex-1">

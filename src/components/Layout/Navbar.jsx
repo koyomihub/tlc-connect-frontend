@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Home, Users, MessageSquare, DollarSign, User, Mail, LogOut } from 'lucide-react';
 import { groupsAPI } from '../../services/api';
+import { AvatarImage } from '../../utils/avatarHelper';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -104,10 +105,11 @@ const Navbar = () => {
           {/* User Menu */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <img
-                src={user.avatar || '/default-avatar.png'}
+              <AvatarImage
+                src={user.avatar}
                 alt={user.name}
                 className="w-8 h-8 rounded-full"
+                fallbackName={user.name}
               />
               <span className="text-sm text-gray-700">Hello, {user.name}</span>
             </div>

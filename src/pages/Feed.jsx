@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { feedAPI } from '../services/api'; // Keep this as is
-import PostCard from '../components/Posts/PostCard';
-import CreatePost from '../components/Posts/CreatePost';
-import FollowPeople from '../components/Social/FollowPeople';
+import { useAuth } from '../../context/AuthContext';
+import { feedAPI } from '../../services/api'; // Keep this as is
+import PostCard from '../../components/Posts/PostCard';
+import CreatePost from '../../components/Posts/CreatePost';
+import FollowPeople from '../../components/Social/FollowPeople';
 import { Loader, RefreshCw } from 'lucide-react';
 
 const Feed = () => {
