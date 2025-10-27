@@ -90,11 +90,16 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/';
   };
 
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+  };
+
   const value = {
     user,
     login,
     register,
     logout,
+    updateUser,
     loading
   };
 

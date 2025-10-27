@@ -30,11 +30,19 @@ const Profile = () => {
       return avatar;
     }
     
-    // If it's a local storage path (for development)
-    if (avatar.startsWith('users/avatars/')) {
-      const baseUrl = import.meta.env.VITE_API_URL;
-      return `${baseUrl}/storage/${avatar}`;
-    }
+  // If it's a local storage path (for development)
+  if (avatar.startsWith('users/avatars/')) {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    return `${baseUrl}/storage/${avatar}`;
+  }
+
+  // Handle the double "storage" path issue
+  if (avatar.startsWith('/storage/storage/')) {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    // Remove the duplicate "storage" and use the correct path
+    const correctedPath = avatar.replace('/storage/storage/', 'storage/');
+    return `${baseUrl}/${correctedPath}`;
+  }
     
     // Fallback to placeholder
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`;
