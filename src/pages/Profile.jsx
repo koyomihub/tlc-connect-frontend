@@ -157,9 +157,23 @@ const Profile = () => {
         const avatarUrl = response.data.avatar_url;
         console.log('New avatar URL:', avatarUrl);
         
-        const updatedUser = { ...user, avatar: avatarUrl };
-        updateUser(updatedUser);
+        // Create updated user object
+        const updatedUser = { 
+          ...user, 
+          avatar: avatarUrl 
+        };
+        
+        // Update auth context - use a safer approach
+        if (typeof updateUser === 'function') {
+          updateUser(updatedUser);
+        } else {
+          console.error('updateUser is not a function:', updateUser);
+        }
+        
+        // Update localStorage
         localStorage.setItem('user_data', JSON.stringify(updatedUser));
+        
+        // Reload profile data
         await loadProfile();
         alert('Profile picture updated successfully!');
       } else {
