@@ -30,20 +30,30 @@ const Profile = () => {
       return avatar;
     }
     
-  // If it's a local storage path (for development)
-  if (avatar.startsWith('users/avatars/')) {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    return `${baseUrl}/storage/${avatar}`;
-  }
-
-  // Handle the double "storage" path issue
-  if (avatar.startsWith('/storage/storage/')) {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    // Remove the duplicate "storage" and use the correct path
-    const correctedPath = avatar.replace('/storage/storage/', 'storage/');
-    return `${baseUrl}/${correctedPath}`;
-  }
+    // Handle the double "storage" path issue
+    if (avatar.startsWith('/storage/storage/')) {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      // Remove the duplicate "storage" and use the correct path
+      const correctedPath = avatar.replace('/storage/storage/', 'storage/');
+      console.log('Corrected double storage path:', `${baseUrl}/${correctedPath}`);
+      return `${baseUrl}/${correctedPath}`;
+    }
     
+    // If it's a local storage path starting with /storage/
+    if (avatar.startsWith('/storage/')) {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      console.log('Building URL for storage path:', `${baseUrl}${avatar}`);
+      return `${baseUrl}${avatar}`;
+    }
+    
+    // If it's a local storage path without leading slash
+    if (avatar.startsWith('users/avatars/')) {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      console.log('Building URL for relative path:', `${baseUrl}/storage/${avatar}`);
+      return `${baseUrl}/storage/${avatar}`;
+    }
+    
+    console.log('Using fallback avatar');
     // Fallback to placeholder
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`;
   };
@@ -158,7 +168,11 @@ const Profile = () => {
 
       console.log('Uploading avatar...', file);
       const response = await mediaAPI.uploadAvatar(formData);
+      
+      // ADD THESE CONSOLE LOGS RIGHT AFTER GETTING THE RESPONSE:
       console.log('Upload response:', response.data);
+      console.log('New avatar URL from server:', response.data.avatar_url);
+      console.log('Current user before update:', user);
       
       // Handle response - use the avatar_url directly
       if (response.data.avatar_url) {
