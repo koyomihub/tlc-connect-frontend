@@ -18,7 +18,7 @@ const Profile = () => {
 
   // Fixed avatar URL handling
   const getAvatarUrl = (avatar) => {
-    console.log('Getting avatar URL for:', avatar);
+    console.log('Processing avatar URL:', avatar);
     
     // If no avatar, use placeholder
     if (!avatar || avatar === 'default-avatar.png') {
@@ -27,13 +27,21 @@ const Profile = () => {
     
     // If it's already a full URL (Cloudinary or other), return as is
     if (avatar.startsWith('http')) {
+      console.log('Returning full URL:', avatar);
       return avatar;
+    }
+    
+    // Handle incomplete Cloudinary URLs (shouldn't happen but just in case)
+    if (avatar.includes('cloudinary.com')) {
+      const fullUrl = avatar.startsWith('//') ? `https:${avatar}` : 
+                     avatar.startsWith('res.cloudinary.com') ? `https://${avatar}` : avatar;
+      console.log('Processed Cloudinary URL:', fullUrl);
+      return fullUrl;
     }
     
     // Handle the double "storage" path issue
     if (avatar.startsWith('/storage/storage/')) {
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      // Remove the duplicate "storage" and use the correct path
       const correctedPath = avatar.replace('/storage/storage/', 'storage/');
       console.log('Corrected double storage path:', `${baseUrl}/${correctedPath}`);
       return `${baseUrl}/${correctedPath}`;
@@ -53,8 +61,7 @@ const Profile = () => {
       return `${baseUrl}/storage/${avatar}`;
     }
     
-    console.log('Using fallback avatar');
-    // Fallback to placeholder
+    console.log('Using fallback for avatar:', avatar);
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`;
   };
 
@@ -169,10 +176,14 @@ const Profile = () => {
       console.log('Uploading avatar...', file);
       const response = await mediaAPI.uploadAvatar(formData);
       
-      // ADD THESE CONSOLE LOGS RIGHT AFTER GETTING THE RESPONSE:
-      console.log('Upload response:', response.data);
-      console.log('New avatar URL from server:', response.data.avatar_url);
+      // DEBUG: Check the full response
+      console.log('=== AVATAR UPLOAD DEBUG ===');
+      console.log('Full response:', response);
+      console.log('Response data:', response.data);
+      console.log('Avatar URL from server:', response.data.avatar_url);
+      console.log('Is Cloudinary URL?', response.data.avatar_url?.includes('cloudinary'));
       console.log('Current user before update:', user);
+      console.log('======================');
       
       // Handle response - use the avatar_url directly
       if (response.data.avatar_url) {
@@ -185,11 +196,11 @@ const Profile = () => {
           avatar: avatarUrl 
         };
         
-        // Update auth context - use a safer approach
+        console.log('Updated user object:', updatedUser);
+        
+        // Update auth context
         if (typeof updateUser === 'function') {
           updateUser(updatedUser);
-        } else {
-          console.error('updateUser is not a function:', updateUser);
         }
         
         // Update localStorage
@@ -309,6 +320,7 @@ const Profile = () => {
   const userProfile = profile?.profile || {};
 
   console.log('Current user avatar:', currentUser.avatar);
+  console.log('Processed avatar URL:', getAvatarUrl(currentUser.avatar));
   console.log('User profile data:', userProfile);
 
   return (
