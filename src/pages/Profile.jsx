@@ -20,27 +20,24 @@ const Profile = () => {
   const getAvatarUrl = (avatar) => {
     console.log('Getting avatar URL for:', avatar);
     
-    // If no avatar or default avatar, return the frontend default
-    if (!avatar || avatar === 'default-avatar.png' || avatar.includes('default-avatar')) {
-      return '/default-avatar.png';
+    // If no avatar, use placeholder
+    if (!avatar || avatar === 'default-avatar.png') {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`;
     }
     
-    // If it's already a full URL (starts with http), return as is
+    // If it's already a full URL (Cloudinary or other), return as is
     if (avatar.startsWith('http')) {
       return avatar;
     }
     
-    // If it's a relative path starting with /storage/, construct full URL
-    if (avatar.startsWith('/storage/')) {
+    // If it's a local storage path (for development)
+    if (avatar.startsWith('users/avatars/')) {
       const baseUrl = import.meta.env.VITE_API_URL;
-      // Remove the leading slash to avoid double slashes
-      const cleanPath = avatar.startsWith('/') ? avatar.substring(1) : avatar;
-      return `${baseUrl}/${cleanPath}`;
+      return `${baseUrl}/storage/${avatar}`;
     }
     
-    // If it's any other relative path, assume it's a storage path
-    const baseUrl = import.meta.env.VITE_API_URL;
-    return `${baseUrl}/storage/${avatar}`;
+    // Fallback to placeholder
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&color=fff&size=128`;
   };
 
   const loadProfile = async () => {
